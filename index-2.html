@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0c12"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="OTA Signal"/>
+<title>OTA Signal — TV Guide</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icons/icon-192.svg"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&family=VT323&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0a0c12;--bg2:#0f1219;--bg3:#141820;--bg4:#1a2030;
+  --border:#1e2d45;--blue:#3b82f6;--blue-dim:#1d4ed8;
+  --amber:#f59e0b;--green:#22c55e;--red:#ef4444;--cyan:#06b6d4;--purple:#a855f7;
+  --text:#e2e8f0;--text-dim:#64748b;--text-mid:#94a3b8;
+  --card:#111827;--card-hover:#1e293b;
+  --ch-width:80px;--cell-h:64px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'Exo 2',sans-serif;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);
+  pointer-events:none;z-index:9999}
+#app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+
+/* ─── ONBOARDING ─── */
+#onboarding{position:fixed;inset:0;background:var(--bg);z-index:2000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;overflow-y:auto}
+#onboarding.hidden{display:none}
+.ob-wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px;padding:12px 0}
+.ob-antenna{font-size:52px;margin-bottom:8px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.ob-title{font-family:'Exo 2',sans-serif;font-weight:900;font-size:28px;letter-spacing:3px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.ob-sub{font-size:12px;color:var(--text-dim);margin-bottom:20px;line-height:1.6;text-align:center}
+.ob-card{width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:12px;padding:18px;margin-bottom:14px}
+.ob-card-title{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;
+  color:var(--text-dim);text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:6px}
+.ob-card-title span{flex:1;height:1px;background:var(--border)}
+.ob-field{margin-bottom:10px}
+.ob-field:last-child{margin-bottom:0}
+.ob-label{display:block;font-family:'Share Tech Mono',monospace;font-size:9px;
+  letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;margin-bottom:5px}
+.ob-input{width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:15px;
+  outline:none;transition:border-color .15s}
+.ob-input:focus{border-color:var(--blue)}
+.ob-input::placeholder{color:var(--text-dim)}
+.ob-input.mono{font-family:'Share Tech Mono',monospace;letter-spacing:2px;font-size:16px;text-align:center}
+.ob-tz{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);
+  margin-top:8px;letter-spacing:.5px}
+.ob-error{font-size:11px;color:var(--red);min-height:16px;margin-bottom:6px;
+  font-family:'Share Tech Mono',monospace;text-align:center}
+.ob-btn{width:100%;padding:13px;border-radius:8px;border:1px solid var(--blue);
+  background:rgba(59,130,246,.15);color:var(--blue);font-family:'Exo 2',sans-serif;
+  font-weight:700;font-size:14px;letter-spacing:1px;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.ob-btn:hover{background:rgba(59,130,246,.3)}
+.ob-btn:disabled{opacity:.4;cursor:not-allowed}
+.ob-skip{font-size:11px;color:var(--text-dim);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+.ob-skip:hover{color:var(--text-mid)}
+.ob-status{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--amber);
+  text-align:center;margin-bottom:8px;min-height:16px;letter-spacing:.5px}
+.ob-note{font-size:10px;color:var(--text-dim);text-align:center;line-height:1.7;margin-top:16px;max-width:300px}
+
+/* ─── HEADER ─── */
+#header{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));
+  background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;z-index:100}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#1e3a5f,#0f1e3d);
+  border-radius:6px;border:1px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'Exo 2',sans-serif;font-weight:900;font-size:18px;letter-spacing:2px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--amber);letter-spacing:3px;line-height:1;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px}
+#live-clock{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--amber);letter-spacing:1px}
+#zip-chip{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);
+  letter-spacing:1px;cursor:pointer;border:1px solid var(--border);border-radius:4px;
+  padding:2px 7px;transition:all .15s}
+#zip-chip:hover{color:var(--blue);border-color:var(--blue)}
+.signal-bars{display:flex;align-items:flex-end;gap:2px;height:16px}
+.signal-bars span{width:3px;background:var(--green);border-radius:1px;animation:sig 2s ease-in-out infinite}
+.signal-bars span:nth-child(1){height:5px}.signal-bars span:nth-child(2){height:9px;animation-delay:.15s}
+.signal-bars span:nth-child(3){height:13px;animation-delay:.3s}.signal-bars span:nth-child(4){height:16px;animation-delay:.45s}
+@keyframes sig{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ─── NAV ─── */
+#nav{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.nav-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:10px 4px;font-family:'Exo 2',sans-serif;font-weight:600;font-size:11px;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);cursor:pointer;
+  border:none;background:none;transition:all .2s;border-bottom:2px solid transparent}
+.nav-tab svg{width:15px;height:15px;flex-shrink:0}
+.nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.nav-tab .badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;
+  border-radius:8px;padding:1px 5px;min-width:16px;text-align:center}
+.view{display:none;flex:1;overflow:hidden;flex-direction:column}
+.view.active{display:flex}
+
+/* ─── LOADING ─── */
+#loading-overlay{position:absolute;inset:0;background:rgba(10,12,18,.88);z-index:50;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  pointer-events:none;opacity:0;transition:opacity .3s}
+#loading-overlay.show{opacity:1;pointer-events:all}
+.loader-ring{width:44px;height:44px;border:3px solid var(--border);
+  border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-mid);
+  letter-spacing:2px;text-transform:uppercase;text-align:center;padding:0 20px}
+
+/* ─── CACHE BAR ─── */
+#cache-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:5px 12px;background:rgba(168,85,247,.07);border-bottom:1px solid rgba(168,85,247,.2);flex-shrink:0}
+#cache-bar.hidden{display:none}
+.cache-text{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--purple);letter-spacing:.5px}
+.cache-refresh{font-size:10px;color:var(--purple);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+/* ─── GUIDE CONTROLS ─── */
+#guide-controls{display:flex;align-items:center;gap:6px;padding:8px 10px;
+  background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#guide-controls::-webkit-scrollbar{display:none}
+.ctrl-btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 9px;
+  border-radius:4px;border:1px solid var(--border);background:var(--bg4);
+  color:var(--text-mid);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.ctrl-btn:hover,.ctrl-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.1)}
+.ctrl-btn.now{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.1)}
+.ctrl-btn.day.active{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.1)}
+.ctrl-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+#refresh-btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:4px 9px;
+  border-radius:4px;border:1px solid var(--border);background:var(--bg4);color:var(--text-dim);
+  cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;margin-left:auto}
+#refresh-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* ─── GUIDE GRID ─── */
+#guide-outer{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
+#guide-header-row{display:flex;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border)}
+#ch-spacer{width:var(--ch-width);min-width:var(--ch-width);flex-shrink:0;border-right:1px solid var(--border)}
+#tl-header{flex:1;overflow:hidden;position:relative;height:28px}
+#tl-inner{position:absolute;top:0;left:0;height:100%;white-space:nowrap}
+.tl-mark{display:inline-flex;align-items:center;height:100%;font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--text-dim);padding-left:4px;border-left:1px solid var(--border);vertical-align:top}
+#guide-body{flex:1;overflow:scroll;-webkit-overflow-scrolling:touch;position:relative}
+#guide-body::-webkit-scrollbar{width:3px;height:3px}
+#guide-body::-webkit-scrollbar-track{background:var(--bg2)}
+#guide-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+#now-line{position:absolute;top:0;width:2px;height:100%;background:var(--amber);
+  opacity:.75;pointer-events:none;z-index:10}
+#now-line::before{content:'';position:absolute;top:0;left:-4px;width:10px;height:10px;
+  background:var(--amber);border-radius:50%}
+.guide-row{display:flex;height:var(--cell-h);border-bottom:1px solid var(--border)}
+.guide-row:last-child{border-bottom:none}
+.ch-label{width:var(--ch-width);min-width:var(--ch-width);flex-shrink:0;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;padding:4px;
+  border-right:1px solid var(--border);background:var(--bg2);position:sticky;left:0;z-index:5}
+.ch-num{font-family:'VT323',monospace;font-size:22px;color:var(--amber);line-height:1}
+.ch-call{font-size:8px;font-weight:700;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.ch-net-lbl{font-size:9px;color:var(--blue);font-weight:600;letter-spacing:.3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center;padding:0 4px}
+.ch-shows{position:relative;height:100%;white-space:nowrap}
+.show-cell{position:absolute;top:2px;height:calc(100% - 4px);border-radius:4px;overflow:hidden;
+  cursor:pointer;transition:filter .15s,transform .1s;border:1px solid transparent;
+  display:flex;flex-direction:column;justify-content:center;padding:4px 6px;user-select:none}
+.show-cell:hover{filter:brightness(1.3);transform:scaleY(1.03);border-color:rgba(255,255,255,.2);z-index:5}
+.show-cell.on-now{border-color:var(--amber)!important}
+.show-cell.is-fav{box-shadow:inset 2px 0 0 var(--amber)}
+.show-cell.gap-cell{cursor:default;opacity:.35}
+.show-cell.gap-cell:hover{filter:none;transform:none;border-color:transparent}
+.show-title{font-weight:700;font-size:11px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;line-height:1.2}
+.show-meta{font-size:9px;opacity:.65;font-family:'Share Tech Mono',monospace;
+  margin-top:1px;white-space:nowrap;overflow:hidden}
+/* Genres */
+.g-drama{background:linear-gradient(135deg,#1e3a5f,#0f2744);color:#93c5fd}
+.g-comedy{background:linear-gradient(135deg,#1a3320,#0f2418);color:#86efac}
+.g-news{background:linear-gradient(135deg,#2d1b4e,#1a0f30);color:#c4b5fd}
+.g-reality{background:linear-gradient(135deg,#3d1a1a,#2a0f0f);color:#fca5a5}
+.g-sports{background:linear-gradient(135deg,#1a2e1a,#0f1f0f);color:#6ee7b7}
+.g-movie{background:linear-gradient(135deg,#2d2519,#1f190f);color:#fcd34d}
+.g-kids{background:linear-gradient(135deg,#1a1a3d,#0f0f2d);color:#a5b4fc}
+.g-talk{background:linear-gradient(135deg,#2d1a2d,#1e0f1e);color:#e879f9}
+.g-doc{background:linear-gradient(135deg,#1a2a2d,#0f1a1e);color:#67e8f9}
+.g-crime{background:linear-gradient(135deg,#2a1a1a,#1a0f0f);color:#fca5a5}
+.g-action{background:linear-gradient(135deg,#2a2010,#1a1408);color:#fcd34d}
+.g-default{background:linear-gradient(135deg,#1a1e2d,#0f1219);color:#94a3b8}
+.guide-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:64px 24px;gap:12px;text-align:center}
+.guide-empty-icon{font-size:48px;opacity:.25}
+.guide-empty-title{font-weight:700;font-size:15px;color:var(--text-mid)}
+.guide-empty-sub{font-size:12px;color:var(--text-dim);line-height:1.6;max-width:280px}
+
+/* ─── SHOW MODAL ─── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;
+  display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+#modal-overlay.open{display:flex}
+#show-modal{width:100%;max-width:500px;background:var(--bg3);border:1px solid var(--border);
+  border-bottom:none;border-radius:16px 16px 0 0;padding:20px;
+  padding-bottom:max(20px,env(safe-area-inset-bottom));
+  animation:slide-up .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes slide-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.m-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.m-ch-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.m-ch{font-family:'VT323',monospace;font-size:26px;color:var(--amber);line-height:1}
+.m-net{font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 7px;
+  border-radius:3px;border:1px solid var(--blue-dim);color:var(--blue);background:rgba(59,130,246,.1)}
+.m-title{font-weight:900;font-size:20px;margin:4px 0 4px;line-height:1.2}
+.m-ep{font-size:11px;color:var(--cyan);font-family:'Share Tech Mono',monospace;margin-bottom:4px}
+.m-time{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-mid);margin-bottom:10px}
+.m-desc{font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:14px;max-height:90px;overflow-y:auto}
+.m-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.m-tag{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 8px;border-radius:3px;border:1px solid var(--border);color:var(--text-dim)}
+.m-tag.live{border-color:var(--amber);color:var(--amber)}
+.m-tag.new{border-color:var(--green);color:var(--green)}
+.m-tag.hd{border-color:var(--blue);color:var(--blue)}
+.m-tag.rating{border-color:var(--purple);color:var(--purple)}
+.m-actions{display:flex;gap:10px}
+.m-btn{flex:1;padding:12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg4);color:var(--text);font-family:'Exo 2',sans-serif;font-weight:700;
+  font-size:13px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.m-btn:hover{background:var(--card-hover)}
+.m-btn.fav{border-color:var(--amber);color:var(--amber)}
+.m-btn.fav.on{background:rgba(245,158,11,.15)}
+.m-btn.x{flex:0 0 auto;padding:12px 16px}
+
+/* ─── LINEUP ─── */
+#lineup-view{overflow-y:auto;padding:12px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 4px;margin-bottom:8px;margin-top:12px}
+.sec-hdr:first-child{margin-top:0}
+.sec-title{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--text-dim)}
+.sec-act{font-size:11px;color:var(--blue);cursor:pointer;font-weight:600;
+  padding:4px 8px;border-radius:4px;border:1px solid var(--blue-dim);
+  background:rgba(59,130,246,.08);transition:all .15s}
+.sec-act:hover{background:rgba(59,130,246,.2)}
+.ch-card{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+.ch-badge{width:50px;height:40px;background:linear-gradient(135deg,#1e3a5f,#0f2744);
+  border:1px solid var(--border);border-radius:6px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;flex-shrink:0}
+.ch-badge-n{font-family:'VT323',monospace;font-size:20px;color:var(--amber);line-height:1}
+.ch-badge-c{font-size:7px;color:var(--text-dim);letter-spacing:.5px;text-align:center}
+.ch-info{flex:1;min-width:0}
+.ch-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-detail{font-size:10px;color:var(--text-dim);font-family:'Share Tech Mono',monospace}
+.ch-acts{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.edit-btn{font-size:11px;color:var(--text-dim);cursor:pointer;padding:3px 8px;
+  border-radius:4px;border:1px solid var(--border);background:none;transition:all .15s}
+.edit-btn:hover{color:var(--blue);border-color:var(--blue)}
+.tog{width:42px;height:24px;border-radius:12px;background:var(--bg4);
+  border:1px solid var(--border);cursor:pointer;position:relative;transition:all .2s}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;
+  border-radius:50%;background:var(--text-dim);transition:all .2s}
+.tog.on{background:rgba(59,130,246,.2);border-color:var(--blue)}
+.tog.on::after{left:20px;background:var(--blue)}
+.add-form{background:var(--card);border:1px dashed var(--border);border-radius:8px;padding:16px;margin-bottom:6px}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.f-label{display:block;font-family:'Share Tech Mono',monospace;font-size:9px;
+  letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin-bottom:3px}
+.f-input{width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:6px;
+  padding:8px 10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;
+  outline:none;transition:border-color .15s}
+.f-input::placeholder{color:var(--text-dim)}
+.f-input:focus{border-color:var(--blue)}
+.f-submit{background:rgba(59,130,246,.15);border:1px solid var(--blue);color:var(--blue);
+  border-radius:6px;padding:9px;font-family:'Exo 2',sans-serif;font-weight:700;
+  font-size:13px;cursor:pointer;transition:all .15s;width:100%}
+.f-submit:hover{background:rgba(59,130,246,.3)}
+
+/* ─── EDIT MODAL ─── */
+#edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1100;
+  display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+#edit-overlay.open{display:flex}
+#edit-modal{width:100%;max-width:500px;background:var(--bg3);border:1px solid var(--border);
+  border-bottom:none;border-radius:16px 16px 0 0;padding:20px;
+  padding-bottom:max(20px,env(safe-area-inset-bottom));animation:slide-up .3s ease}
+.edit-title{font-weight:700;font-size:15px;margin-bottom:16px}
+.edit-row{margin-bottom:12px}
+
+/* ─── FAVORITES ─── */
+#favs-view{overflow-y:auto;padding:12px}
+.fav-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:14px;margin-bottom:8px;position:relative;overflow:hidden}
+.fav-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber)}
+.fav-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.fav-title{font-weight:900;font-size:15px;line-height:1.2}
+.fav-rm{flex-shrink:0;width:24px;height:24px;border-radius:50%;border:1px solid var(--border);
+  background:var(--bg4);color:var(--text-dim);cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s}
+.fav-rm:hover{border-color:var(--red);color:var(--red)}
+.fav-next{font-size:11px;font-family:'Share Tech Mono',monospace;margin-bottom:6px}
+.c-now{color:var(--red)}.c-soon{color:var(--green)}.c-today{color:var(--amber)}
+.c-later{color:var(--cyan)}.c-none{color:var(--text-dim)}
+.air-list{display:flex;flex-direction:column;gap:4px}
+.air-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-mid)}
+.air-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.air-dot.now{background:var(--red);animation:pulse .9s ease-in-out infinite}
+.air-dot.soon{background:var(--green)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.empty-favs{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:56px 24px;text-align:center;gap:12px}
+.empty-icon{font-size:48px;opacity:.25}
+.empty-title{font-weight:700;font-size:15px;color:var(--text-mid)}
+.empty-sub{font-size:12px;color:var(--text-dim);line-height:1.6;max-width:260px}
+
+/* ─── DEBUG PANEL ─── */
+#debug-panel{position:fixed;inset:0;background:var(--bg);z-index:3000;
+  display:none;flex-direction:column;padding:16px;overflow-y:auto;font-family:'Share Tech Mono',monospace}
+#debug-panel.open{display:flex}
+#debug-log{flex:1;font-size:11px;line-height:1.8;color:var(--text-mid);white-space:pre-wrap;word-break:break-all}
+.dlog-ok{color:var(--green)}.dlog-err{color:var(--red)}.dlog-info{color:var(--amber)}.dlog-dim{color:var(--text-dim)}
+#debug-close{flex-shrink:0;margin-bottom:12px;padding:8px 16px;border-radius:6px;
+  border:1px solid var(--border);background:var(--bg3);color:var(--text);
+  font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer}
+#dbg-btn{position:fixed;bottom:80px;right:12px;z-index:500;background:var(--bg3);
+  border:1px solid var(--border);border-radius:6px;padding:6px 10px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);cursor:pointer}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:50%;
+  transform:translateX(-50%) translateY(10px);background:var(--bg3);
+  border:1px solid var(--border);border-radius:20px;padding:8px 16px;
+  font-size:12px;font-weight:600;color:var(--text);opacity:0;pointer-events:none;
+  transition:all .3s;white-space:nowrap;z-index:500}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══ ONBOARDING ═══ -->
+<div id="onboarding">
+  <div class="ob-wrap">
+    <div class="ob-antenna">📡</div>
+    <div class="ob-title">OTA SIGNAL</div>
+    <div class="ob-sub">Full Over-the-Air TV listings powered by<br/><strong style="color:var(--blue)">Schedules Direct</strong> — real local channels, real schedules.</div>
+
+    <div class="ob-card">
+      <div class="ob-card-title"><span></span>YOUR LOCATION<span></span></div>
+      <div class="ob-field">
+        <label class="ob-label">ZIP Code</label>
+        <input class="ob-input mono" id="ob-zip" type="text" inputmode="numeric" maxlength="5" placeholder="79936"/>
+        <div class="ob-tz" id="ob-tz">🕐 Timezone: detecting…</div>
+      </div>
+    </div>
+
+    <div class="ob-card">
+      <div class="ob-card-title"><span></span>SCHEDULES DIRECT LOGIN<span></span></div>
+      <div class="ob-field">
+        <label class="ob-label">Username</label>
+        <input class="ob-input" id="ob-user" type="text" autocomplete="username" placeholder="your SD username"/>
+      </div>
+      <div class="ob-field">
+        <label class="ob-label">Password</label>
+        <input class="ob-input" id="ob-pass" type="password" autocomplete="current-password" placeholder="your SD password"/>
+      </div>
+    </div>
+
+    <div class="ob-error" id="ob-error"></div>
+    <div class="ob-status" id="ob-status"></div>
+    <button class="ob-btn" id="ob-btn" onclick="startApp()">📺 Connect &amp; Load Guide</button>
+    <div class="ob-note">
+      Your password is hashed (SHA-1) in your browser before being sent — never stored in plain text.<br/>
+      Need an account? <a href="https://schedulesdirect.org" target="_blank" style="color:var(--blue)">schedulesdirect.org</a> — ~$25/year.
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="header">
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div>
+      <div class="logo-text">OTA SIGNAL</div>
+      <div class="logo-sub">DIGITAL TV GUIDE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="zip-chip" onclick="changeSettings()" title="Settings">📍 -----</span>
+    <div id="live-clock">00:00:00</div>
+    <div class="signal-bars"><span></span><span></span><span></span><span></span></div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav id="nav">
+  <button class="nav-tab active" data-view="guide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+    </svg>Guide
+  </button>
+  <button class="nav-tab" data-view="lineup">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+    </svg>My Lineup
+  </button>
+  <button class="nav-tab" data-view="favs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>Favorites
+    <span class="badge" id="fav-badge" style="display:none">0</span>
+  </button>
+</nav>
+
+<!-- ═══ GUIDE VIEW ═══ -->
+<div class="view active" id="guide-view">
+  <div id="cache-bar" class="hidden">
+    <span class="cache-text" id="cache-text">📦 CACHED DATA</span>
+    <span class="cache-refresh" onclick="forceRefresh()">Refresh now</span>
+  </div>
+  <div id="guide-controls">
+    <button class="ctrl-btn now" onclick="jumpToNow()">▶ NOW</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn day active" id="btn-today" onclick="setDay(0)">TODAY</button>
+    <button class="ctrl-btn day" id="btn-tomorrow" onclick="setDay(1)">TMW</button>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn" onclick="jumpToHour(6)">6A</button>
+    <button class="ctrl-btn" onclick="jumpToHour(9)">9A</button>
+    <button class="ctrl-btn" onclick="jumpToHour(12)">12P</button>
+    <button class="ctrl-btn" onclick="jumpToHour(15)">3P</button>
+    <button class="ctrl-btn" onclick="jumpToHour(18)">6P</button>
+    <button class="ctrl-btn" onclick="jumpToHour(20)">8P</button>
+    <button class="ctrl-btn" onclick="jumpToHour(22)">10P</button>
+    <button id="refresh-btn" onclick="forceRefresh()">↺ REFRESH</button>
+  </div>
+  <div id="guide-outer">
+    <div id="guide-header-row">
+      <div id="ch-spacer"></div>
+      <div id="tl-header"><div id="tl-inner"></div></div>
+    </div>
+    <div id="guide-body">
+      <div id="now-line"></div>
+      <div id="guide-rows"></div>
+    </div>
+    <div id="loading-overlay">
+      <div class="loader-ring"></div>
+      <div class="loader-text" id="load-text">LOADING…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LINEUP VIEW ═══ -->
+<div class="view" id="lineup-view">
+  <div class="sec-hdr" style="margin-top:0">
+    <span class="sec-title">📡 Active Channels</span>
+    <span class="sec-act" onclick="toggleAll(true)">All On</span>
+  </div>
+  <div id="active-chs"></div>
+  <div class="sec-hdr">
+    <span class="sec-title">➕ Add Custom Channel</span>
+  </div>
+  <div class="add-form">
+    <div class="f-grid">
+      <div><label class="f-label">Channel #</label><input class="f-input" id="n-num" placeholder="11.1"/></div>
+      <div><label class="f-label">Callsign</label><input class="f-input" id="n-call" placeholder="WDTV"/></div>
+      <div><label class="f-label">Affiliate / Name</label><input class="f-input" id="n-net" placeholder="ABC"/></div>
+      <div><label class="f-label">Display Name</label><input class="f-input" id="n-name" placeholder="WDTV ABC 11"/></div>
+    </div>
+    <button class="f-submit" onclick="addChannel()">＋ Add to Lineup</button>
+  </div>
+  <div class="sec-hdr">
+    <span class="sec-title">🚫 Hidden Channels</span>
+    <span class="sec-act" onclick="toggleAll(false)">Hide All</span>
+  </div>
+  <div id="hidden-chs"></div>
+</div>
+
+<!-- ═══ FAVORITES VIEW ═══ -->
+<div class="view" id="favs-view">
+  <div id="favs-list"></div>
+</div>
+
+<!-- ═══ SHOW MODAL ═══ -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="show-modal">
+    <div class="m-handle"></div>
+    <div class="m-ch-row">
+      <div id="m-ch" class="m-ch"></div>
+      <span id="m-net" class="m-net"></span>
+    </div>
+    <div id="m-title" class="m-title"></div>
+    <div id="m-ep" class="m-ep"></div>
+    <div id="m-time" class="m-time"></div>
+    <div id="m-desc" class="m-desc"></div>
+    <div id="m-tags" class="m-tags"></div>
+    <div class="m-actions">
+      <button class="m-btn fav" id="m-fav" onclick="toggleFav()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span id="m-fav-text">Add to Favorites</span>
+      </button>
+      <button class="m-btn x" onclick="closeModalDirect()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT CHANNEL MODAL ═══ -->
+<div id="edit-overlay" onclick="closeEdit(event)">
+  <div id="edit-modal">
+    <div class="m-handle"></div>
+    <div class="edit-title">Edit Channel</div>
+    <div class="edit-row"><label class="f-label">Channel Number</label><input class="f-input" id="e-num"/></div>
+    <div class="edit-row"><label class="f-label">Callsign</label><input class="f-input" id="e-call"/></div>
+    <div class="edit-row" style="margin-bottom:20px"><label class="f-label">Display Name</label><input class="f-input" id="e-name"/></div>
+    <div class="m-actions">
+      <button class="f-submit" onclick="saveEdit()">Save Changes</button>
+      <button class="m-btn x" onclick="closeEditDirect()">✕</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;
+  background:#0a0c12;border-top:2px solid #ef4444;padding:10px 12px;
+  font-family:monospace;font-size:11px;color:#94a3b8;max-height:40vh;
+  overflow-y:auto;z-index:9000">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span style="color:#ef4444;font-weight:bold;letter-spacing:1px">⚠ DEBUG LOG</span>
+    <button onclick="document.getElementById('debug-panel').style.display='none'"
+      style="background:none;border:1px solid #ef4444;color:#ef4444;border-radius:4px;
+      padding:2px 8px;cursor:pointer;font-size:11px">close</button>
+  </div>
+  <div id="debug-log"></div>
+</div>
+<button id="dbg-btn" onclick="openDebug()">🔍 DEBUG</button>
+<div id="debug-panel">
+  <button id="debug-close" onclick="closeDebug()">✕ Close Debug</button>
+  <div id="debug-log">Press DIAGNOSE to test each step...</div>
+  <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+    <button id="debug-close" onclick="runDiag()" style="flex:1;padding:10px;border-radius:6px;border:1px solid var(--blue);background:rgba(59,130,246,.15);color:var(--blue);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer">▶ DIAGNOSE</button>
+    <button id="debug-close" onclick="clearAllData()" style="flex:1;padding:10px;border-radius:6px;border:1px solid var(--red);background:rgba(239,68,68,.1);color:var(--red);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer">🗑 CLEAR ALL DATA</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════
+// 👇 Set this to your Cloudflare Worker URL after deploying (see sd-proxy-worker.js)
+const PROXY = 'https://winter-limit-ac17.joaquindlh.workers.dev';
+const TOKEN_TTL   = 23 * 3600 * 1000;   // 23h (SD tokens valid 24h)
+const LINEUP_TTL  = 7  * 86400 * 1000;  // 7 days
+const SCHED_TTL   = 4  * 3600 * 1000;   // 4 hours
+const PX_MIN      = 3;
+const G_START     = 6;
+const G_END       = 24;
+const G_MINS      = (G_END - G_START) * 60;
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let channels  = [];   // [{id, stationID, num, call, net, name, active}]
+let favorites = new Set();
+let guideData = {};   // {stationID: [{title,startMs,endMs,...}]}
+let activeDay = 0;
+let openShow  = null;
+let editIdx   = null;
+
+// ══════════════════════════════════════════════════
+//  SHA-1 (browser Web Crypto)
+// ══════════════════════════════════════════════════
+async function sha1(str) {
+  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  SD API CALLS (via Netlify proxy)
+// ══════════════════════════════════════════════════
+async function sdCall(endpoint, method='GET', body=null, params=null, useToken=true) {
+  const token = useToken ? getCachedToken() : null;
+  const res = await fetch(PROXY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint, method, body, token, params }),
+  });
+  if (!res.ok) throw new Error('Proxy HTTP ' + res.status);
+  const data = await res.json();
+  if (data.code && data.code !== 0 && data.code !== 1 && data.message) {
+    throw new Error(`SD ${data.code}: ${data.message}`);
+  }
+  return data;
+}
+
+// ── Token ──
+function getCachedToken() {
+  try {
+    const r = JSON.parse(localStorage.getItem('sd_token') || 'null');
+    if (r && Date.now() - r.ts < TOKEN_TTL) return r.token;
+  } catch(e) {}
+  return null;
+}
+async function getToken(username, passwordHash) {
+  const data = await sdCall('token', 'POST', { username, password: passwordHash }, null, false);
+  localStorage.setItem('sd_token', JSON.stringify({ token: data.token, ts: Date.now() }));
+  return data.token;
+}
+async function ensureToken() {
+  if (getCachedToken()) return;
+  const creds = JSON.parse(localStorage.getItem('sd_creds') || '{}');
+  if (!creds.username || !creds.hash) throw new Error('No credentials saved');
+  await getToken(creds.username, creds.hash);
+}
+
+// ══════════════════════════════════════════════════
+//  SCHEDULES DIRECT — FULL FETCH PIPELINE
+// ══════════════════════════════════════════════════
+async function fetchLineupAndSchedule(zipCode) {
+  setLoading(true, 'AUTHENTICATING…');
+  await ensureToken();
+
+  // 1. Get headends for ZIP — find the OTA lineup
+  setLoading(true, 'FINDING LOCAL LINEUP…'); dbg('Fetching headends for ZIP: '+zipCode);
+  const headends = await sdCall('headends', 'GET', null, { country:'USA', postalcode: zipCode });
+  let lineupUri = null;
+  let lineupID  = null;
+  for (const h of (Array.isArray(headends) ? headends : [])) {
+    if (h.transport === 'Antenna' || h.type === 'Over-the-Air' ||
+        (h.lineups && h.lineups.some(l => l.uri?.includes('OTA')))) {
+      const lp = (h.lineups||[]).find(l => l.uri?.includes('OTA')) || h.lineups?.[0];
+      if (lp) { lineupUri = lp.uri; lineupID = lp.uri.split('/').pop(); break; }
+    }
+  }
+  // fallback: try standard OTA ID
+  dbg('Headends result: '+JSON.stringify(headends).slice(0,200));
+  if (!lineupID) lineupID = `USA-OTA-${zipCode}`;
+  dbg('Using lineupID: '+lineupID);
+
+  // 2. Add lineup to account (safe to call even if already added)
+  setLoading(true, 'ADDING LINEUP…');
+  try { await sdCall(`lineups/${lineupID}`, 'PUT'); } catch(e) { /* may already be added */ }
+
+  // 3. Get channel map
+  setLoading(true, 'LOADING CHANNEL MAP…'); dbg('Fetching lineup map for: '+lineupID);
+  const lineupData = await sdCall(`lineups/${lineupID}`);
+  dbg('Lineup stations: '+(lineupData.stations||[]).length+', map entries: '+(lineupData.map||[]).length);
+  const stationMap = {}; // stationID → station info
+  for (const st of (lineupData.stations || [])) {
+    stationMap[st.stationID] = st;
+  }
+
+  // Build channels array from SD lineup
+  const newChannels = [];
+  for (const entry of (lineupData.map || [])) {
+    const st = stationMap[entry.stationID];
+    if (!st) continue;
+    const minor = parseInt(entry.channelMinor || '0');
+    const major = entry.channel || '';
+    const num   = minor > 0 ? `${major}.${minor}` : `${major}.1`;
+    newChannels.push({
+      id:        'sd_' + entry.stationID,
+      stationID: entry.stationID,
+      num,
+      call:      st.callsign || 'UNK',
+      net:       st.affiliate || st.name || st.callsign || '',
+      name:      (st.name || st.callsign || '') + (st.affiliate ? ' · ' + st.affiliate : ''),
+      active:    true,
+    });
+  }
+  // Sort by channel number numerically
+  newChannels.sort((a, b) => parseFloat(a.num) - parseFloat(b.num));
+
+  // Preserve user's active toggles if they've already customized
+  const saved = JSON.parse(localStorage.getItem('sd_channels') || '[]');
+  const savedMap = {};
+  saved.forEach(c => { savedMap[c.stationID] = c; });
+  newChannels.forEach(c => {
+    if (savedMap[c.stationID]) c.active = savedMap[c.stationID].active;
+  });
+
+  dbg('Built '+newChannels.length+' channels'); channels = newChannels;
+  localStorage.setItem('sd_channels', JSON.stringify(channels));
+  localStorage.setItem('sd_lineup_ts', Date.now().toString());
+  localStorage.setItem('sd_lineup_id', lineupID);
+
+  // 4. Fetch schedule
+  await fetchSchedules();
+}
+
+async function fetchSchedules() {
+  setLoading(true, 'FETCHING SCHEDULE…'); dbg('Fetching schedules for '+stationIDs.length+' stations');
+  const stationIDs = channels.map(c => c.stationID);
+  const dates = [toDateStr(0), toDateStr(1)];
+
+  // SD allows up to 5000 stations per request, batch if needed
+  const batchSize = 500;
+  const allSchedules = [];
+  for (let i = 0; i < stationIDs.length; i += batchSize) {
+    const batch = stationIDs.slice(i, i + batchSize).map(sid => ({ stationID: sid, date: dates }));
+    const result = await sdCall('schedules', 'POST', batch);
+    if (Array.isArray(result)) allSchedules.push(...result);
+    dbg('Schedule batch result: '+(Array.isArray(result)?result.length:'not array')+' stations');
+  }
+
+  // Collect all unique programIDs
+  const programIDset = new Set();
+  const rawSchedule = {}; // stationID → [{programID, startMs, dur, isNew, isHD, isLive}]
+  for (const st of allSchedules) {
+    rawSchedule[st.stationID] = [];
+    for (const prog of (st.programs || [])) {
+      programIDset.add(prog.programID);
+      rawSchedule[st.stationID].push({
+        programID:  prog.programID,
+        startMs:    new Date(prog.airDateTime).getTime(),
+        dur:        prog.duration / 60, // SD gives seconds, convert to minutes
+        isNew:      prog.new === true,
+        isLive:     prog.liveTapeDelay === 'Live',
+        isHD:       (prog.videoProperties || []).includes('hdtv'),
+      });
+    }
+  }
+
+  // 5. Fetch program details in batches of 500
+  setLoading(true, 'LOADING PROGRAM INFO…'); dbg('Fetching '+progIDs.length+' program details');
+  const progIDs = [...programIDset];
+  const progDetails = {}; // programID → details
+  for (let i = 0; i < progIDs.length; i += 500) {
+    const batch = progIDs.slice(i, i + 500);
+    const result = await sdCall('programs', 'POST', batch);
+    if (Array.isArray(result)) {
+      result.forEach(p => { progDetails[p.programID] = p; });
+    }
+  }
+
+  // 6. Join schedules + program details
+  const newGuide = {};
+  for (const [sid, slots] of Object.entries(rawSchedule)) {
+    newGuide[sid] = slots.map(slot => {
+      const p = progDetails[slot.programID] || {};
+      const title = (p.titles || []).find(t => t.title120)?.title120 ||
+                    (p.titles || [])[0]?.title120 || 'Unknown';
+      const desc = (p.descriptions?.description1000 || p.descriptions?.description100 || [])
+        .find(d => d.descriptionLanguage === 'en' || !d.descriptionLanguage)?.description || '';
+      const epTitle = p.episodeTitle150 || '';
+      return {
+        programID:  slot.programID,
+        title,
+        epTitle,
+        season:     p.metadata?.Gracenote?.season,
+        episode:    p.metadata?.Gracenote?.episode,
+        desc,
+        genres:     p.genres || [],
+        startMs:    slot.startMs,
+        endMs:      slot.startMs + slot.dur * 60000,
+        dur:        slot.dur,
+        isNew:      slot.isNew,
+        isLive:     slot.isLive,
+        isHD:       slot.isHD,
+        isMovie:    p.programID?.startsWith('MV'),
+        rating:     (p.contentRating || []).find(r => r.body === 'Motion Picture Association')?.code ||
+                    (p.contentRating || [])[0]?.code || '',
+        stationID:  sid,
+      };
+    }).sort((a, b) => a.startMs - b.startMs);
+  }
+
+  const totalShows = Object.values(newGuide).reduce((s,a)=>s+a.length,0);
+  dbg('Guide built: '+Object.keys(newGuide).length+' stations, '+totalShows+' airings');
+  guideData = newGuide;
+  saveGuideCache();
+  setLoading(false);
+}
+
+// ── Cache ──
+function saveGuideCache() {
+  try {
+    localStorage.setItem('sd_guide', JSON.stringify({ ts: Date.now(), data: guideData }));
+  } catch(e) { console.warn('Cache save failed (storage full?):', e); }
+}
+function loadGuideCache() {
+  try {
+    const r = JSON.parse(localStorage.getItem('sd_guide') || 'null');
+    if (r && Date.now() - r.ts < SCHED_TTL) { guideData = r.data; return true; }
+  } catch(e) {}
+  return false;
+}
+function guideCacheAge() {
+  try { const r=JSON.parse(localStorage.getItem('sd_guide')||'null'); return r ? Date.now()-r.ts : null; }
+  catch(e){ return null; }
+}
+async function forceRefresh() {
+  localStorage.removeItem('sd_guide');
+  document.getElementById('cache-bar').classList.add('hidden');
+  try {
+    await fetchSchedules();
+    showToast('✅ Schedule refreshed!');
+  } catch(e) {
+    showToast('⚠ Refresh failed: ' + e.message);
+    setLoading(false);
+  }
+  renderGuide(); renderFavs();
+}
+function updateCacheBar() {
+  const age = guideCacheAge();
+  const bar = document.getElementById('cache-bar');
+  if (age !== null && age > 3600000) {
+    const h = Math.floor(age/3600000), m = Math.floor((age%3600000)/60000);
+    document.getElementById('cache-text').textContent =
+      `📦 DATA ${h>0?h+'h ':''}${m}m OLD · REFRESHES EVERY 4H`;
+    bar.classList.remove('hidden');
+  } else bar.classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════
+//  GUIDE RENDERING
+// ══════════════════════════════════════════════════
+function toDateStr(offset=0) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function baseMs(dayOff=0) {
+  const d=new Date(); d.setDate(d.getDate()+dayOff);
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime() + G_START*3600000;
+}
+function genreClass(genres=[]) {
+  const g=(genres[0]||'').toLowerCase();
+  if(g.includes('drama'))   return 'g-drama';
+  if(g.includes('comedy'))  return 'g-comedy';
+  if(g.includes('news')||g.includes('current')) return 'g-news';
+  if(g.includes('reality')) return 'g-reality';
+  if(g.includes('sport'))   return 'g-sports';
+  if(g.includes('movie')||g.includes('film')||g.includes('feature')) return 'g-movie';
+  if(g.includes('child')||g.includes('family')||g.includes('anim')) return 'g-kids';
+  if(g.includes('talk')||g.includes('game')) return 'g-talk';
+  if(g.includes('doc')||g.includes('nature')||g.includes('history')) return 'g-doc';
+  if(g.includes('crime')||g.includes('thriller')||g.includes('mystery')) return 'g-crime';
+  if(g.includes('action')||g.includes('adven')) return 'g-action';
+  return 'g-default';
+}
+
+function renderGuide() {
+  const b      = baseMs(activeDay);
+  const winEnd = b + G_MINS*60000;
+  const active = channels.filter(c => c.active);
+  dbg(`renderGuide: ${channels.length} total channels, ${active.length} active, guideData keys: ${Object.keys(guideData).length}`);
+  if (active.length > 0) {
+    const sample = active[0];
+    const shows = (guideData[sample.stationID]||[]).filter(s=>s.endMs>b&&s.startMs<winEnd);
+    dbg(`  sample ch ${sample.num} ${sample.call} stationID=${sample.stationID} → ${(guideData[sample.stationID]||[]).length} total shows, ${shows.length} in window`);
+    dbg(`  window: ${new Date(b).toLocaleTimeString()} – ${new Date(winEnd).toLocaleTimeString()}`);
+    if ((guideData[sample.stationID]||[]).length > 0) {
+      const s0 = guideData[sample.stationID][0];
+      dbg(`  first show: "${s0.title}" ${new Date(s0.startMs).toLocaleTimeString()} – ${new Date(s0.endMs).toLocaleTimeString()}`);
+    }
+  }
+
+  document.getElementById('btn-today').classList.toggle('active', activeDay===0);
+  document.getElementById('btn-tomorrow').classList.toggle('active', activeDay===1);
+
+  // Timeline
+  const tl = document.getElementById('tl-inner');
+  tl.innerHTML=''; tl.style.width=(G_MINS*PX_MIN)+'px';
+  for(let h=G_START;h<G_END;h++){
+    const el=document.createElement('div'); el.className='tl-mark';
+    el.style.width=(60*PX_MIN)+'px';
+    el.textContent=(h%12||12)+':00 '+(h>=12?'PM':'AM');
+    tl.appendChild(el);
+  }
+
+  const rows=document.getElementById('guide-rows');
+  rows.innerHTML=''; rows.style.width=(80+G_MINS*PX_MIN)+'px';
+
+  if(!active.length){
+    rows.innerHTML=`<div class="guide-empty"><div class="guide-empty-icon">📡</div>
+      <div class="guide-empty-title">No Active Channels</div>
+      <div class="guide-empty-sub">Go to My Lineup and enable some channels.</div></div>`;
+    return;
+  }
+
+  const nowMs=Date.now();
+  active.forEach(ch => {
+    const row=document.createElement('div'); row.className='guide-row';
+    const lbl=document.createElement('div'); lbl.className='ch-label';
+    lbl.innerHTML=`<div class="ch-num">${ch.num}</div>
+      <div class="ch-call">${ch.call.slice(0,6)}</div>
+      <div class="ch-net-lbl">${(ch.net||'').length>10?(ch.net||'').slice(0,10)+'…':(ch.net||'')}</div>`;
+    row.appendChild(lbl);
+
+    const sw=document.createElement('div'); sw.className='ch-shows'; sw.style.width=(G_MINS*PX_MIN)+'px';
+
+    const shows=(guideData[ch.stationID]||[])
+      .filter(s => s.endMs>b && s.startMs<winEnd)
+      .sort((a,z) => a.startMs-z.startMs);
+
+    // Gap-fill
+    const cells=[];
+    let cursor=b;
+    shows.forEach(show => {
+      const ss=Math.max(show.startMs,b);
+      if(ss > cursor+60000) cells.push({isGap:true, startMs:cursor, endMs:ss});
+      cells.push({isGap:false, ...show, startMs:ss});
+      cursor=Math.max(cursor, show.endMs);
+    });
+    if(cursor < winEnd-60000) cells.push({isGap:true, startMs:cursor, endMs:winEnd});
+    if(!shows.length) cells.push({isGap:true, startMs:b, endMs:winEnd});
+
+    cells.forEach(cell => {
+      const left=Math.max(0,(cell.startMs-b)/60000)*PX_MIN;
+      const rawW=((Math.min(cell.endMs,winEnd)-Math.max(cell.startMs,b))/60000)*PX_MIN;
+      const w=Math.max(rawW-2, 4);
+      const c=document.createElement('div');
+      if(cell.isGap){
+        c.className='show-cell g-default gap-cell';
+        c.style.left=left+'px'; c.style.width=w+'px';
+        if(w>70) c.innerHTML=`<div class="show-title" style="font-style:italic;font-weight:400;font-size:10px">No info</div>`;
+      } else {
+        const show=cell;
+        c.className=`show-cell ${show.isMovie?'g-movie':genreClass(show.genres)}`;
+        if(show.startMs<=nowMs&&show.endMs>nowMs) c.classList.add('on-now');
+        if(favorites.has(show.title)) c.classList.add('is-fav');
+        c.style.left=left+'px'; c.style.width=w+'px';
+        const epSub=show.epTitle&&show.epTitle!==show.title
+          ?` <span style="opacity:.55;font-weight:400">· ${show.epTitle}</span>`:'';
+        c.innerHTML=`<div class="show-title">${show.title}${epSub}</div>
+          <div class="show-meta">${fmtT(show.startMs)} · ${fmtD(show.dur)}</div>`;
+        c.addEventListener('click', () => openModal(show, ch));
+      }
+      sw.appendChild(c);
+    });
+
+    row.appendChild(sw); rows.appendChild(row);
+  });
+  updateNowLine(b);
+  updateCacheBar();
+}
+
+function updateNowLine(b){
+  const nl=document.getElementById('now-line');
+  if(activeDay!==0){nl.style.display='none';return;}
+  const off=(Date.now()-b)/60000;
+  if(off<0||off>G_MINS){nl.style.display='none';return;}
+  nl.style.display='block'; nl.style.left=(80+off*PX_MIN)+'px';
+}
+function setDay(d){activeDay=d;renderGuide();if(d===0)jumpToNow();else jumpToHour(G_START);}
+function jumpToHour(h){
+  const body=document.getElementById('guide-body');
+  body.scrollLeft=Math.max(0,(h-G_START)*60*PX_MIN-40); syncTL();
+}
+function jumpToNow(){
+  const off=(Date.now()-baseMs(0))/60000;
+  document.getElementById('guide-body').scrollLeft=Math.max(0,off*PX_MIN-100); syncTL();
+}
+function syncTL(){
+  document.getElementById('tl-inner').style.transform=
+    `translateX(${-document.getElementById('guide-body').scrollLeft}px)`;
+}
+document.getElementById('guide-body').addEventListener('scroll', syncTL);
+
+// ══════════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════════
+function openModal(show, ch){
+  openShow={show,ch};
+  document.getElementById('m-ch').textContent=`${ch.num} ${ch.call}`;
+  document.getElementById('m-net').textContent=ch.net||ch.call;
+  document.getElementById('m-title').textContent=show.title;
+  const ep=document.getElementById('m-ep');
+  if(show.epTitle&&show.epTitle!==show.title){
+    ep.textContent=show.season?`S${show.season}E${show.episode||'?'} — "${show.epTitle}"`:`"${show.epTitle}"`;
+    ep.style.display='';
+  } else ep.style.display='none';
+  document.getElementById('m-time').textContent=
+    `${fmtT(show.startMs)} – ${fmtT(show.endMs)}  ·  ${fmtD(show.dur)}`;
+  document.getElementById('m-desc').textContent=show.desc||'No description available.';
+  const tags=document.getElementById('m-tags'); tags.innerHTML='';
+  (show.genres||[]).slice(0,3).forEach(g=>{
+    const t=document.createElement('span');t.className='m-tag';t.textContent=g.toUpperCase();tags.appendChild(t);
+  });
+  const nowMs=Date.now();
+  if(show.startMs<=nowMs&&show.endMs>nowMs){
+    const pct=Math.round((nowMs-show.startMs)/(show.endMs-show.startMs)*100);
+    const t=document.createElement('span');t.className='m-tag live';t.textContent=`LIVE · ${pct}%`;tags.appendChild(t);
+  }
+  if(show.isNew){const t=document.createElement('span');t.className='m-tag new';t.textContent='NEW';tags.appendChild(t);}
+  if(show.isHD){const t=document.createElement('span');t.className='m-tag hd';t.textContent='HD';tags.appendChild(t);}
+  if(show.rating){const t=document.createElement('span');t.className='m-tag rating';t.textContent=show.rating;tags.appendChild(t);}
+  refreshFavBtn();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function refreshFavBtn(){
+  if(!openShow)return;
+  const on=favorites.has(openShow.show.title);
+  document.getElementById('m-fav').classList.toggle('on',on);
+  document.getElementById('m-fav-text').textContent=on?'Remove Favorite':'Add to Favorites';
+}
+function toggleFav(){
+  if(!openShow)return;
+  const t=openShow.show.title;
+  favorites.has(t)?(favorites.delete(t),showToast('Removed from Favorites')):(favorites.add(t),showToast('⭐ Added to Favorites!'));
+  localStorage.setItem('sd_favs',JSON.stringify([...favorites]));
+  refreshFavBtn(); updateFavBadge(); renderGuide(); renderFavs();
+}
+function closeModal(e){if(e.target===document.getElementById('modal-overlay'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modal-overlay').classList.remove('open');openShow=null;}
+
+// ══════════════════════════════════════════════════
+//  LINEUP
+// ══════════════════════════════════════════════════
+function renderLineup(){
+  const aEl=document.getElementById('active-chs');
+  const hEl=document.getElementById('hidden-chs');
+  aEl.innerHTML=''; hEl.innerHTML='';
+  channels.forEach((ch,i)=>{
+    const card=document.createElement('div'); card.className='ch-card';
+    card.innerHTML=`
+      <div class="ch-badge"><div class="ch-badge-n">${ch.num}</div><div class="ch-badge-c">${ch.call.slice(0,6)}</div></div>
+      <div class="ch-info"><div class="ch-name">${ch.name}</div>
+        <div class="ch-detail">${ch.net||''} · ${ch.call}</div></div>
+      <div class="ch-acts">
+        <button class="edit-btn" onclick="openEdit(${i})">Edit</button>
+        <div class="tog ${ch.active?'on':''}" onclick="toggleCh(${i})"></div>
+      </div>`;
+    (ch.active?aEl:hEl).appendChild(card);
+  });
+  if(!hEl.children.length)
+    hEl.innerHTML='<div style="color:var(--text-dim);font-size:11px;padding:8px 4px;font-family:\'Share Tech Mono\',monospace">No hidden channels</div>';
+}
+function toggleCh(i){channels[i].active=!channels[i].active;saveChannels();renderLineup();renderGuide();}
+function toggleAll(on){channels.forEach(c=>c.active=on);saveChannels();renderLineup();renderGuide();}
+function saveChannels(){localStorage.setItem('sd_channels',JSON.stringify(channels));}
+function addChannel(){
+  const num=document.getElementById('n-num').value.trim();
+  const call=document.getElementById('n-call').value.trim().toUpperCase();
+  const net=document.getElementById('n-net').value.trim();
+  const name=document.getElementById('n-name').value.trim();
+  if(!num||!call){showToast('⚠ Channel # and callsign required');return;}
+  channels.push({id:'c_'+Date.now(),stationID:'custom_'+Date.now(),num,call,net:net||call,name:name||(call+' '+num),active:true});
+  saveChannels();renderLineup();renderGuide();
+  ['n-num','n-call','n-net','n-name'].forEach(id=>document.getElementById(id).value='');
+  showToast(`📡 ${call} added!`);
+}
+function openEdit(i){
+  editIdx=i; const ch=channels[i];
+  document.getElementById('e-num').value=ch.num;
+  document.getElementById('e-call').value=ch.call;
+  document.getElementById('e-name').value=ch.name;
+  document.getElementById('edit-overlay').classList.add('open');
+}
+function saveEdit(){
+  if(editIdx===null)return;
+  channels[editIdx].num=document.getElementById('e-num').value.trim()||channels[editIdx].num;
+  channels[editIdx].call=document.getElementById('e-call').value.trim().toUpperCase()||channels[editIdx].call;
+  channels[editIdx].name=document.getElementById('e-name').value.trim()||channels[editIdx].name;
+  saveChannels();renderLineup();renderGuide();closeEditDirect();showToast('✅ Saved!');
+}
+function closeEdit(e){if(e.target===document.getElementById('edit-overlay'))closeEditDirect();}
+function closeEditDirect(){document.getElementById('edit-overlay').classList.remove('open');editIdx=null;}
+
+// ══════════════════════════════════════════════════
+//  FAVORITES
+// ══════════════════════════════════════════════════
+function renderFavs(){
+  const con=document.getElementById('favs-list');
+  if(!favorites.size){
+    con.innerHTML=`<div class="empty-favs"><div class="empty-icon">⭐</div>
+      <div class="empty-title">No Favorites Yet</div>
+      <div class="empty-sub">Tap any show in the Guide and press "Add to Favorites".</div>
+    </div>`;return;
+  }
+  con.innerHTML='';
+  const hdr=document.createElement('div');hdr.className='sec-hdr';
+  hdr.innerHTML=`<span class="sec-title">⭐ ${favorites.size} Favorite${favorites.size!==1?'s':''}</span>`;
+  con.appendChild(hdr);
+  const nowMs=Date.now();
+  const allShows=[];
+  Object.values(guideData).forEach(arr=>arr.forEach(s=>{if(s.endMs>nowMs)allShows.push(s);}));
+  allShows.sort((a,b)=>a.startMs-b.startMs);
+  [...favorites].sort().forEach(title=>{
+    const upcoming=allShows.filter(s=>s.title===title).slice(0,5);
+    const card=document.createElement('div');card.className='fav-card';
+    let body='';
+    if(upcoming.length){
+      const nx=upcoming[0];
+      const isNow=nx.startMs<=nowMs&&nx.endMs>nowMs;
+      const css=isNow?'c-now':nx.startMs-nowMs<3600000?'c-soon':nx.startMs-nowMs<86400000?'c-today':'c-later';
+      body=`<div class="fav-next ${css}">${isNow?'🔴 ON AIR NOW':'⏰ Next: '+relTime(nx.startMs)}</div><div class="air-list">`;
+      upcoming.forEach((s,i)=>{
+        const n2=s.startMs<=nowMs&&s.endMs>nowMs;
+        const ch=channels.find(c=>c.stationID===s.stationID);
+        const chLbl=ch?`${ch.num} ${ch.call}`:s.stationID;
+        body+=`<div class="air-item"><div class="air-dot ${n2?'now':i===0&&!isNow?'soon':''}"></div>
+          <span>${fmtDS(s.startMs)} · ${fmtT(s.startMs)}–${fmtT(s.endMs)}</span>
+          <span style="color:var(--amber);font-size:10px">${chLbl}</span></div>`;
+      });
+      body+='</div>';
+    } else {
+      body=`<div class="fav-next c-none">No upcoming airings in current schedule</div>`;
+    }
+    card.innerHTML=`<div class="fav-hdr"><div class="fav-title">${title}</div>
+      <button class="fav-rm" onclick="rmFav('${title.replace(/'/g,"\\'")}')">✕</button></div>${body}`;
+    con.appendChild(card);
+  });
+}
+function rmFav(t){
+  favorites.delete(t);
+  localStorage.setItem('sd_favs',JSON.stringify([...favorites]));
+  updateFavBadge();renderFavs();renderGuide();showToast('Removed');
+}
+function updateFavBadge(){
+  const b=document.getElementById('fav-badge');
+  b.style.display=favorites.size?'block':'none';b.textContent=favorites.size;
+}
+
+// ══════════════════════════════════════════════════
+//  ONBOARDING
+// ══════════════════════════════════════════════════
+function detectTZ(){
+  document.getElementById('ob-tz').textContent='🕐 '+Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+function setStatus(msg){document.getElementById('ob-status').textContent=msg;}
+function setObError(msg){document.getElementById('ob-error').textContent=msg;}
+
+async function startApp(){
+  const zip  = document.getElementById('ob-zip').value.trim();
+  const user = document.getElementById('ob-user').value.trim();
+  const pass = document.getElementById('ob-pass').value;
+  setObError('');
+  if(!user||!pass){setObError('Username and password are required.');return;}
+  if(zip&&!/^\d{5}$/.test(zip)){setObError('Enter a valid 5-digit ZIP.');return;}
+  const btn=document.getElementById('ob-btn');
+  btn.disabled=true; btn.textContent='⏳ Connecting…';
+  try {
+    setStatus('🔐 Hashing password…');
+    const hash = await sha1(pass);
+    setStatus('🔑 Getting token…'); dbg('Getting SD token for: '+user);
+    await getToken(user, hash);
+    // Save credentials (hash only, never plaintext)
+    dbg('Token OK, saving creds'); localStorage.setItem('sd_creds', JSON.stringify({ username:user, hash }));
+    if(zip) localStorage.setItem('sd_zip', zip);
+    localStorage.setItem('sd_launched','1');
+    document.getElementById('zip-chip').textContent = '📍 '+(zip||'?????');
+    document.getElementById('onboarding').classList.add('hidden');
+    await initApp(zip||'79936');
+  } catch(e) {
+    dbg('startApp error: '+e.message, true);
+    setObError('❌ ' + e.message);
+    btn.disabled=false; btn.textContent='📺 Connect & Load Guide';
+    setStatus('');
+  }
+}
+function changeSettings(){
+  document.getElementById('ob-btn').disabled=false;
+  document.getElementById('ob-btn').textContent='📺 Connect & Load Guide';
+  document.getElementById('ob-error').textContent='';
+  document.getElementById('ob-status').textContent='';
+  const creds=JSON.parse(localStorage.getItem('sd_creds')||'{}');
+  document.getElementById('ob-zip').value=localStorage.getItem('sd_zip')||'';
+  document.getElementById('ob-user').value=creds.username||'';
+  document.getElementById('ob-pass').value='';
+  document.getElementById('onboarding').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════════
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    const v=tab.dataset.view;
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(v+'-view').classList.add('active');
+    if(v==='guide')  renderGuide();
+    if(v==='lineup') renderLineup();
+    if(v==='favs')   renderFavs();
+  });
+});
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+function fmtT(ms){
+  const d=new Date(ms),h=d.getHours(),m=d.getMinutes();
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function fmtD(mins){
+  if(!mins||mins<1)return '—';
+  if(mins<60)return mins+'m';
+  const h=Math.floor(mins/60),m=mins%60;
+  return m?`${h}h ${m}m`:`${h}h`;
+}
+function fmtDS(ms){
+  return new Date(ms).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+function relTime(ms){
+  const d=ms-Date.now();if(d<0)return 'Now';
+  const m=Math.floor(d/60000);if(m<60)return m+'m';
+  const h=Math.floor(m/60),rm=m%60;
+  if(h<24)return rm?`${h}h ${rm}m`:`${h}h`;
+  return Math.floor(h/24)+'d';
+}
+function setLoading(on,msg='LOADING…'){
+  document.getElementById('load-text').textContent=msg;
+  document.getElementById('loading-overlay').classList.toggle('show',on);
+}
+
+// Clock
+function tick(){
+  const n=new Date();
+  document.getElementById('live-clock').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+}
+
+// Toast
+let tTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(tTimer);tTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+async function initApp(zip) {
+  // Load saved channels
+  try {
+    const sc = localStorage.getItem('sd_channels');
+    if (sc) channels = JSON.parse(sc);
+    const sf = localStorage.getItem('sd_favs');
+    favorites = new Set(sf ? JSON.parse(sf) : []);
+  } catch(e) { channels=[]; favorites=new Set(); }
+
+  updateFavBadge(); tick();
+  setInterval(tick, 1000);
+  setInterval(() => { updateNowLine(baseMs(activeDay)); updateCacheBar(); }, 60000);
+
+  const savedZip = zip || localStorage.getItem('sd_zip') || '79936';
+  document.getElementById('zip-chip').textContent = '📍 ' + savedZip;
+
+  renderGuide(); // render with whatever we have cached
+
+  const lineupAge = localStorage.getItem('sd_lineup_ts')
+    ? Date.now() - parseInt(localStorage.getItem('sd_lineup_ts')) : Infinity;
+  const hasChannels = channels.length > 0;
+  const hasFreshGuide = loadGuideCache();
+  const needsLineup = !hasChannels || lineupAge > LINEUP_TTL;
+
+  // Validate that guide cache stationIDs actually match current channels
+  // (they can diverge if caches are from different sessions)
+  const guideMatchesChannels = hasFreshGuide && channels.length > 0 &&
+    channels.some(c => guideData[c.stationID] !== undefined);
+
+  dbg(`hasChannels=${hasChannels} lineupAge=${Math.round(lineupAge/60000)}m hasFreshGuide=${hasFreshGuide} guideMatchesChannels=${guideMatchesChannels} needsLineup=${needsLineup}`);
+
+  if (needsLineup) {
+    localStorage.removeItem('sd_guide');
+    guideData = {};
+    try {
+      await fetchLineupAndSchedule(savedZip);
+    } catch(e) {
+      showToast('⚠ ' + e.message);
+      console.error(e);
+      dbg('fetchLineupAndSchedule error: ' + e.message, true);
+    } finally {
+      setLoading(false);
+    }
+  } else if (!guideMatchesChannels) {
+    // Have channels but guide is missing or stale/mismatched
+    dbg('Guide cache mismatch — re-fetching schedule');
+    localStorage.removeItem('sd_guide');
+    guideData = {};
+    try {
+      await fetchSchedules();
+    } catch(e) {
+      showToast('⚠ Schedule refresh failed: ' + e.message);
+      console.error(e);
+      dbg('fetchSchedules error: ' + e.message, true);
+    } finally {
+      setLoading(false);
+    }
+  } else {
+    dbg('Using cached channels + guide data (IDs verified match)');
+    setLoading(false);
+  }
+
+  // Force re-render after all data is loaded
+  dbg(`Final render: channels=${channels.length}, guideData=${Object.keys(guideData).length}`);
+  renderGuide(); renderFavs();
+  setTimeout(jumpToNow, 200);
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════
+//  DEBUG
+// ══════════════════════════════════════════════════
+const debugLines = [];
+function dlog(msg, cls='dlog-info') {
+  const ts = new Date().toLocaleTimeString('en-US',{hour12:false});
+  debugLines.push(`<span class="${cls}">[${ts}] ${msg}</span>`);
+  document.getElementById('debug-log').innerHTML = debugLines.join('\n');
+}
+function openDebug() { document.getElementById('debug-panel').classList.add('open'); }
+function closeDebug() { document.getElementById('debug-panel').classList.remove('open'); }
+function clearAllData() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('sd_') || k.startsWith('ota'));
+  keys.forEach(k => localStorage.removeItem(k));
+  dlog('Cleared: ' + keys.join(', '), 'dlog-ok');
+  dlog('Reload the page to start fresh.', 'dlog-info');
+}
+async function runDiag() {
+  debugLines.length = 0;
+  dlog('=== DIAGNOSTICS START ===', 'dlog-info');
+
+  // 1. Check localStorage
+  dlog('--- localStorage ---', 'dlog-dim');
+  dlog('sd_launched: ' + localStorage.getItem('sd_launched'));
+  dlog('sd_zip: ' + localStorage.getItem('sd_zip'));
+  const creds = JSON.parse(localStorage.getItem('sd_creds') || '{}');
+  dlog('sd_creds.username: ' + (creds.username || 'MISSING'));
+  dlog('sd_creds.hash: ' + (creds.hash ? creds.hash.slice(0,8)+'...' : 'MISSING'));
+  const tok = JSON.parse(localStorage.getItem('sd_token') || '{}');
+  dlog('sd_token: ' + (tok.token ? tok.token.slice(0,12)+'... (age '+ Math.round((Date.now()-tok.ts)/60000)+'m)' : 'MISSING'));
+  dlog('sd_channels count: ' + (JSON.parse(localStorage.getItem('sd_channels')||'[]')).length);
+  dlog('sd_guide: ' + (localStorage.getItem('sd_guide') ? 'present' : 'missing'));
+
+  // 2. Check proxy reachable
+  dlog('--- Proxy test ---', 'dlog-dim');
+  try {
+    const r = await fetch(PROXY, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ endpoint:'status', method:'GET', token:null, useToken:false }) });
+    const d = await r.json();
+    dlog('Proxy HTTP: ' + r.status, r.ok ? 'dlog-ok' : 'dlog-err');
+    dlog('SD /status response: ' + JSON.stringify(d).slice(0,200), 'dlog-ok');
+  } catch(e) { dlog('Proxy FAILED: ' + e.message, 'dlog-err'); }
+
+  // 3. Token
+  dlog('--- Token ---', 'dlog-dim');
+  if (!creds.username || !creds.hash) {
+    dlog('No credentials — please log in first', 'dlog-err');
+    return;
+  }
+  try {
+    const d = await sdCall('token', 'POST', { username: creds.username, password: creds.hash }, null, false);
+    dlog('Token OK: ' + (d.token||'').slice(0,12)+'...', 'dlog-ok');
+  } catch(e) { dlog('Token FAILED: ' + e.message, 'dlog-err'); return; }
+
+  // 4. Headends
+  dlog('--- Headends ---', 'dlog-dim');
+  const zip = localStorage.getItem('sd_zip') || '79936';
+  try {
+    const d = await sdCall('headends', 'GET', null, { country:'USA', postalcode: zip });
+    dlog('Headends count: ' + (Array.isArray(d) ? d.length : '?'), 'dlog-ok');
+    if (Array.isArray(d)) d.forEach((h,i) => {
+      dlog(`  [${i}] ${h.headend} ${h.transport||h.type||''} lineups:${(h.lineups||[]).map(l=>l.uri).join(',')}`, 'dlog-dim');
+    });
+  } catch(e) { dlog('Headends FAILED: ' + e.message, 'dlog-err'); }
+
+  // 5. Direct lineup fetch
+  dlog('--- Lineup ---', 'dlog-dim');
+  const lineupID = localStorage.getItem('sd_lineup_id') || ('USA-OTA-'+zip);
+  try {
+    const d = await sdCall('lineups/' + lineupID);
+    dlog('Lineup stations: ' + (d.stations||[]).length + '  map entries: ' + (d.map||[]).length, 'dlog-ok');
+    if ((d.stations||[]).length) dlog('  sample: ' + JSON.stringify(d.stations[0]).slice(0,120), 'dlog-dim');
+  } catch(e) { dlog('Lineup FAILED: ' + e.message, 'dlog-err'); }
+
+  // 6. In-memory state
+  dlog('--- In-memory ---', 'dlog-dim');
+  dlog('channels.length: ' + channels.length, channels.length ? 'dlog-ok' : 'dlog-err');
+  if (channels.length) dlog('  first: ' + JSON.stringify(channels[0]).slice(0,120), 'dlog-dim');
+  const gdKeys = Object.keys(guideData);
+  dlog('guideData keys: ' + gdKeys.length, gdKeys.length ? 'dlog-ok' : 'dlog-err');
+  if (gdKeys.length) {
+    const sample = guideData[gdKeys[0]];
+    dlog('  first stationID: '+gdKeys[0]+' shows: '+(sample||[]).length, 'dlog-dim');
+  }
+  dlog('=== DONE ===', 'dlog-info');
+}
+
+// ── Debug logger ──
+function dbg(msg, isErr=false) {
+  console.log('[OTA]', msg);
+  const panel = document.getElementById('debug-panel');
+  const log   = document.getElementById('debug-log');
+  const line  = document.createElement('div');
+  line.style.cssText = 'padding:2px 0;border-bottom:1px solid #1e2d45;color:' + (isErr?'#ef4444':'#94a3b8');
+  line.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+  panel.style.display = 'block';
+}
+
+// ── Boot ──
+detectTZ();
+if (localStorage.getItem('sd_launched') && localStorage.getItem('sd_creds')) {
+  document.getElementById('onboarding').classList.add('hidden');
+  initApp().catch(e => {
+    setLoading(false);
+    showToast('⚠ Load error: ' + e.message);
+    console.error('initApp error:', e);
+  });
+} else {
+  // Pre-fill zip if we have it
+  const z = localStorage.getItem('sd_zip');
+  if (z) document.getElementById('ob-zip').value = z;
+}
+</script>
+</body>
+</html>
