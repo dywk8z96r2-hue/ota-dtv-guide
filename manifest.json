@@ -1,0 +1,14 @@
+{
+  "name": "OTA Signal — TV Guide",
+  "short_name": "OTA Signal",
+  "description": "Over-the-Air Digital TV Guide with custom lineup and favorites",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0c12",
+  "theme_color": "#0a0c12",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}

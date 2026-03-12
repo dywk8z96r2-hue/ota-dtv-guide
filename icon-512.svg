@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0a0c12"/>
+  <rect x="56" y="140" width="400" height="256" rx="18" fill="none" stroke="#3b82f6" stroke-width="10"/>
+  <rect x="76" y="160" width="360" height="216" rx="10" fill="#111827"/>
+  <!-- antenna -->
+  <line x1="256" y1="140" x2="256" y2="80" stroke="#3b82f6" stroke-width="8" stroke-linecap="round"/>
+  <line x1="210" y1="100" x2="256" y2="80" stroke="#3b82f6" stroke-width="6" stroke-linecap="round"/>
+  <line x1="302" y1="100" x2="256" y2="80" stroke="#3b82f6" stroke-width="6" stroke-linecap="round"/>
+  <!-- screen content lines -->
+  <rect x="100" y="190" width="120" height="12" rx="6" fill="#1e3a5f"/>
+  <rect x="100" y="210" width="200" height="8" rx="4" fill="#1a2030"/>
+  <rect x="100" y="226" width="160" height="8" rx="4" fill="#1a2030"/>
+  <rect x="100" y="242" width="180" height="8" rx="4" fill="#1a2030"/>
+  <!-- channel number -->
+  <text x="350" y="295" font-family="monospace" font-size="72" fill="#f59e0b" text-anchor="middle" font-weight="bold">2.1</text>
+  <!-- signal bars -->
+  <rect x="100" y="310" width="60" height="16" rx="4" fill="#22c55e" opacity="0.8"/>
+  <text x="100" y="342" font-family="monospace" font-size="24" fill="#3b82f6">OTA SIGNAL</text>
+  <!-- stand -->
+  <rect x="196" y="400" width="120" height="14" rx="7" fill="#1e3a5f"/>
+  <rect x="228" y="396" width="56" height="14" rx="5" fill="#1e3a5f"/>
+</svg>
